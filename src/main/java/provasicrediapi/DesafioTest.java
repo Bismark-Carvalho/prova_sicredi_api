@@ -1,19 +1,22 @@
 package provasicrediapi;
 
+import static io.restassured.RestAssured.baseURI;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import io.restassured.path.xml.XmlPath;
-import io.restassured.path.xml.XmlPath.CompatibilityMode;
-
+import io.restassured.http.ContentType;
 
 public class DesafioTest {
 	
-	private String html;
+	@BeforeClass
+	public static void setup() {
+		baseURI = "https://viacep.com.br/ws";
+	}
+	
 
 	@Test
 	public void deveConsultarCepValido() {
@@ -21,7 +24,7 @@ public class DesafioTest {
 		.log().all()
 		.contentType("application/json")
 	.when()
-		.get("https://viacep.com.br/ws/91060900/json/")
+		.get("/91060900/json/")
 	.then()
 		.log().all()
 		.statusCode(200)
@@ -40,7 +43,7 @@ public class DesafioTest {
 		.log().all()
 		.contentType("application/json")
 	.when()
-		.get("https://viacep.com.br/ws/99999999/json/")
+		.get("/99999999/json/")
 	.then()
 		.log().all()
 		.statusCode(200)
@@ -48,23 +51,19 @@ public class DesafioTest {
 	}
 	
 	@Test
-	@Ignore
-	public void deveConsultarCepFormatoInvalido() {		
-		
-		XmlPath xmlPath = new XmlPath(CompatibilityMode.HTML, html);
-//		System.out.println(xmlPath.get("html.body.h1"));
-		xmlPath.get("html.body.h1");
-		
+	public void deveConsultarCepFormatoInvalido() {				
 		given()
 		.log().all()
-		.contentType("application/json")
+		.contentType("text/html")
 	.when()
-		.get("https://viacep.com.br/ws/999/json/")
+		.get("/999/json/")
 	.then()
 		.log().all()
 		.statusCode(400)
-		.body("html/body/h1", containsStringIgnoringCase("Error 400"))
-		
+		.contentType(ContentType.HTML)
+		.body("html.body.h1", is("Erro 400"))
+		.body("html.body.h2", is("Ops!"))
+		.body("html.body.h3", is("Verifique a sua URL (Bad Request)"))
 		;
 	}
 	
@@ -74,13 +73,33 @@ public class DesafioTest {
 		.log().all()
 		.contentType("application/json")
 	.when()
-		.get("https://viacep.com.br/ws/RS/Gravatai/Barroso/json/")
+		.get("/RS/Gravatai/Barroso/json/")
 	.then()
 		.log().all()
 		.statusCode(200)
+		.body("$", hasSize(2))
 		
+		.body("cep[0]", is("94085-170"))
+		.body("logradouro[0]", is("Rua Ari Barroso"))
+		.body("complemento[0]", is(""))
+		.body("bairro[0]", is("Morada do Vale I"))
+		.body("localidade[0]", is("Gravataí"))
+		.body("uf[0]", is("RS"))
+		.body("ibge[0]", is("4309209"))
+		.body("gia[0]", is(""))
+		.body("ddd[0]", is("51"))
+		.body("siafi[0]", is("8683"))
 		
-		;
+		.body("cep[1]", is("94175-000"))
+		.body("logradouro[1]", is("Rua Almirante Barroso"))
+		.body("complemento[1]", is(""))
+		.body("bairro[1]", is("Recanto Corcunda"))
+		.body("localidade[1]", is("Gravataí"))
+		.body("uf[1]", is("RS"))
+		.body("ibge[1]", is("4309209"))
+		.body("gia[1]", is(""))
+		.body("ddd[1]", is("51"))
+		.body("siafi[1]", is("8683"));
 	}
 	
 	
